@@ -9,20 +9,24 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     JobQueue,
+    Job,
 )
 
 # ------------------------------
 # Configuration
 # ------------------------------
 
-BOT_TOKEN = '7881791180:AAHiz6A3NDwwkdhlPNwxoWu1L0kgkJOIMSU'
+BOT_TOKEN = '7881791180:AAGcXMwwhGciOISqqrOv3nwy-4VJYtXkN0Y'
 DEFAULT_QUOTE = "\"Stay positive, work hard, and make it happen.\""
 FONT_PATH = "arial.ttf"
 FONT_SIZE = 24
 STICKER_FILE = "quote_sticker.webp"
 SUBSCRIBED_USERS = set()
 
-# Enable logging
+# ------------------------------
+# Logging Configuration
+# ------------------------------
+
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -72,7 +76,7 @@ async def get_random_quote():
 # ------------------------------
 
 def generate_multicolor_gradient():
-    """Generate a random multi-color gradient background."""
+    """Generate a multi-color gradient background."""
     try:
         img = Image.new('RGBA', (512, 512), (255, 255, 255, 255))
         draw = ImageDraw.Draw(img)
@@ -84,7 +88,6 @@ def generate_multicolor_gradient():
             tuple(random.randint(180, 255) for _ in range(3))
         ]
 
-        # Vertical Gradient
         for y in range(512):
             ratio = y / 512
             r = int(colors[0][0] * (1 - ratio) + colors[1][0] * ratio)
@@ -92,7 +95,6 @@ def generate_multicolor_gradient():
             b = int(colors[0][2] * (1 - ratio) + colors[1][2] * ratio)
             draw.line([(0, y), (512, y)], fill=(r, g, b))
 
-        # Diagonal Blend
         for x in range(512):
             ratio = x / 512
             r = int(colors[1][0] * (1 - ratio) + colors[2][0] * ratio)
@@ -107,7 +109,7 @@ def generate_multicolor_gradient():
 
 
 def generate_sticker(quote):
-    """Generate a sticker with a multi-color gradient background."""
+    """Generate a sticker with a gradient background."""
     try:
         img = generate_multicolor_gradient()
         draw = ImageDraw.Draw(img)
@@ -124,7 +126,7 @@ def generate_sticker(quote):
         logger.error(f"Sticker Generation Error: {e}")
 
 # ------------------------------
-# Bot Handlers
+# Bot Command Handlers
 # ------------------------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -135,13 +137,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
     )
 
+
 async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     SUBSCRIBED_USERS.add(update.message.chat_id)
     await update.message.reply_text("✅ Subscribed to hourly quote stickers!")
 
+
 async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE):
     SUBSCRIBED_USERS.discard(update.message.chat_id)
     await update.message.reply_text("❌ Unsubscribed from hourly quote stickers.")
+
 
 async def send_hourly_quote(context: ContextTypes.DEFAULT_TYPE):
     for chat_id in SUBSCRIBED_USERS:
@@ -155,12 +160,13 @@ async def send_hourly_quote(context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
+    job_queue = application.job_queue
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("subscribe", subscribe))
     application.add_handler(CommandHandler("unsubscribe", unsubscribe))
 
-    application.job_queue.run_repeating(send_hourly_quote, interval=3600, first=0)
+    job_queue.run_repeating(send_hourly_quote, interval=3600, first=0)
 
     application.run_polling()
 
