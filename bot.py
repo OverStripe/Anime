@@ -16,7 +16,7 @@ from telegram.ext import (
 # Configuration
 # ------------------------------
 
-BOT_TOKEN = '7881791180:AAGcXMwwhGciOISqqrOv3nwy-4VJYtXkN0Y'
+BOT_TOKEN = '7881791180:AAHomjvIXPYZLt_uvby8TV93thP3lSO0hcQ'
 DEFAULT_QUOTE = "\"Stay positive, work hard, and make it happen.\""
 FONT_PATH = "arial.ttf"
 FONT_SIZE = 24
@@ -160,12 +160,15 @@ async def send_hourly_quote(context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    # Access JobQueue directly from the Application
     job_queue = application.job_queue
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("subscribe", subscribe))
     application.add_handler(CommandHandler("unsubscribe", unsubscribe))
 
+    # Add the job to the JobQueue
     job_queue.run_repeating(send_hourly_quote, interval=3600, first=0)
 
     application.run_polling()
